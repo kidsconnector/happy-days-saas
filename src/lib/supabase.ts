@@ -97,10 +97,20 @@ export const getCampaigns = async () => {
   return data;
 };
 
-export const createApiKey = async (name: string) => {
+export const getEvents = async () => {
   const { data, error } = await supabase
-    .from('api_keys')
-    .insert({ name })
+    .from('events')
+    .select('*')
+    .order('datetime', { ascending: true });
+  
+  if (error) throw error;
+  return data;
+};
+
+export const createEvent = async (eventData: any) => {
+  const { data, error } = await supabase
+    .from('events')
+    .insert(eventData)
     .select()
     .single();
   
@@ -108,14 +118,23 @@ export const createApiKey = async (name: string) => {
   return data;
 };
 
-export const deactivateApiKey = async (id: string) => {
+export const updateEvent = async (id: string, eventData: any) => {
   const { data, error } = await supabase
-    .from('api_keys')
-    .update({ active: false })
+    .from('events')
+    .update(eventData)
     .eq('id', id)
     .select()
     .single();
   
   if (error) throw error;
   return data;
+};
+
+export const deleteEvent = async (id: string) => {
+  const { error } = await supabase
+    .from('events')
+    .delete()
+    .eq('id', id);
+  
+  if (error) throw error;
 };
