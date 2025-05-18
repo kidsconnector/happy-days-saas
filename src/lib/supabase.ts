@@ -10,9 +10,12 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
 
-export const getUpcomingBirthdays = async (daysAhead = 90) => {
+// Children
+export const getChildren = async () => {
   const { data, error } = await supabase
-    .rpc('get_upcoming_birthdays', { p_days_ahead: daysAhead });
+    .from('children')
+    .select('*')
+    .order('name');
   
   if (error) throw error;
   return data;
@@ -21,7 +24,10 @@ export const getUpcomingBirthdays = async (daysAhead = 90) => {
 export const createChild = async (childData: any) => {
   const { data, error } = await supabase
     .from('children')
-    .insert(childData)
+    .insert({
+      ...childData,
+      tenant_id: (await supabase.auth.getUser()).data.user?.user_metadata.tenant_id
+    })
     .select()
     .single();
   
@@ -29,27 +35,7 @@ export const createChild = async (childData: any) => {
   return data;
 };
 
-export const updateChild = async (id: string, childData: any) => {
-  const { data, error } = await supabase
-    .from('children')
-    .update(childData)
-    .eq('id', id)
-    .select()
-    .single();
-  
-  if (error) throw error;
-  return data;
-};
-
-export const deleteChild = async (id: string) => {
-  const { error } = await supabase
-    .from('children')
-    .delete()
-    .eq('id', id);
-  
-  if (error) throw error;
-};
-
+// Email Templates
 export const getEmailTemplates = async () => {
   const { data, error } = await supabase
     .from('email_templates')
@@ -60,10 +46,32 @@ export const getEmailTemplates = async () => {
   return data;
 };
 
-export const createEmailTemplate = async (templateData: any) => {
+export const createEmailTemplate = async (templateData: {
+  title: string;
+  subject: string;
+  html_content: string;
+  event_type: string;
+  scheduled_for: string;
+  recipients: string[];
+}) => {
+  const { data: userData } = await supabase.auth.getUser();
+  const tenantId = userData.user?.user_metadata.tenant_id;
+
+  if (!tenantId) {
+    throw new Error('No tenant ID found in user metadata');
+  }
+
   const { data, error } = await supabase
     .from('email_templates')
-    .insert(templateData)
+    .insert({
+      tenant_id: tenantId,
+      title: templateData.title,
+      subject: templateData.subject,
+      html_content: templateData.html_content,
+      event_type: templateData.event_type,
+      scheduled_for: templateData.scheduled_for,
+      recipients: templateData.recipients
+    })
     .select()
     .single();
   
@@ -71,27 +79,23 @@ export const createEmailTemplate = async (templateData: any) => {
   return data;
 };
 
-export const updateEmailTemplate = async (id: string, templateData: any) => {
+// Events
+export const createEvent = async (eventData: any) => {
+  const { data: userData } = await supabase.auth.getUser();
+  const tenantId = userData.user?.user_metadata.tenant_id;
+
+  if (!tenantId) {
+    throw new Error('No tenant ID found in user metadata');
+  }
+
   const { data, error } = await supabase
-    .from('email_templates')
-    .update(templateData)
-    .eq('id', id)
+    .from('events')
+    .insert({
+      ...eventData,
+      tenant_id: tenantId
+    })
     .select()
     .single();
-  
-  if (error) throw error;
-  return data;
-};
-
-export const getCampaigns = async () => {
-  const { data, error } = await supabase
-    .from('campaigns')
-    .select(`
-      *,
-      child:children(name, parent_name, email),
-      template:email_templates(title, subject)
-    `)
-    .order('scheduled_for', { ascending: true });
   
   if (error) throw error;
   return data;
@@ -101,16 +105,37 @@ export const getEvents = async () => {
   const { data, error } = await supabase
     .from('events')
     .select('*')
-    .order('datetime', { ascending: true });
+    .order('start_date', { ascending: true });
   
   if (error) throw error;
   return data;
 };
 
-export const createEvent = async (eventData: any) => {
+// Coupons
+export const getCoupons = async () => {
   const { data, error } = await supabase
-    .from('events')
-    .insert(eventData)
+    .from('coupons')
+    .select('*')
+    .order('created_at', { ascending: false });
+  
+  if (error) throw error;
+  return data;
+};
+
+export const createCoupon = async (couponData: any) => {
+  const { data: userData } = await supabase.auth.getUser();
+  const tenantId = userData.user?.user_metadata.tenant_id;
+
+  if (!tenantId) {
+    throw new Error('No tenant ID found in user metadata');
+  }
+
+  const { data, error } = await supabase
+    .from('coupons')
+    .insert({
+      ...couponData,
+      tenant_id: tenantId
+    })
     .select()
     .single();
   
@@ -118,23 +143,51 @@ export const createEvent = async (eventData: any) => {
   return data;
 };
 
-export const updateEvent = async (id: string, eventData: any) => {
+// Campaigns
+export const getCampaigns = async () => {
   const { data, error } = await supabase
-    .from('events')
-    .update(eventData)
-    .eq('id', id)
-    .select()
-    .single();
+    .from('campaigns')
+    .select(`
+      *,
+      child:children(name, parent_name, parent_email),
+      template:email_templates(title, subject)
+    `)
+    .order('scheduled_for', { ascending: true });
   
   if (error) throw error;
   return data;
 };
 
-export const deleteEvent = async (id: string) => {
-  const { error } = await supabase
-    .from('events')
-    .delete()
-    .eq('id', id);
+export const createCampaign = async (campaignData: {
+  title: string;
+  subject: string;
+  html_content: string;
+  scheduled_for: string;
+  recipients: string[];
+  type: string;
+}) => {
+  const { data: userData } = await supabase.auth.getUser();
+  const tenantId = userData.user?.user_metadata.tenant_id;
+
+  if (!tenantId) {
+    throw new Error('No tenant ID found in user metadata');
+  }
+
+  const { data, error } = await supabase
+    .from('campaigns')
+    .insert({
+      tenant_id: tenantId,
+      title: campaignData.title,
+      subject: campaignData.subject,
+      html_content: campaignData.html_content,
+      scheduled_for: campaignData.scheduled_for,
+      recipients: campaignData.recipients,
+      type: campaignData.type,
+      status: 'scheduled'
+    })
+    .select()
+    .single();
   
   if (error) throw error;
+  return data;
 };

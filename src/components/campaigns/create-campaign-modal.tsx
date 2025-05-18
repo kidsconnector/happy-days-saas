@@ -45,7 +45,6 @@ const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({ isOpen, onClo
     resolver: zodResolver(campaignSchema),
   });
 
-  // Fetch children when modal opens
   useEffect(() => {
     if (isOpen) {
       fetchChildren();
@@ -57,7 +56,6 @@ const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({ isOpen, onClo
       const { data, error } = await supabase
         .from('children')
         .select('id, name, parent_name, parent_email, tags')
-
         .order('name');
       
       if (error) throw error;
@@ -68,7 +66,6 @@ const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({ isOpen, onClo
     }
   };
 
-  // Filter children based on tags
   const tags = watch('tags');
   const filteredChildren = React.useMemo(() => {
     if (!tags) return children;

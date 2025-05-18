@@ -11,8 +11,11 @@ import toast from 'react-hot-toast';
 const childSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   birthdate: z.string().min(1, 'Birthdate is required'),
+  parent_name: z.string().min(1, 'Parent name is required'),
+  parent_email: z.string().email('Valid email is required'),
+  phone: z.string().optional(),
   allergies: z.string().optional(),
-  specialNeeds: z.string().optional(),
+  special_needs: z.string().optional(),
 });
 
 type ChildFormData = z.infer<typeof childSchema>;
@@ -32,7 +35,7 @@ const AddChildModal: React.FC<AddChildModalProps> = ({ isOpen, onClose, onSucces
     try {
       await createChild({
         ...data,
-        tenant_id: null, // Will be set by RLS policy
+        tags: [],
       });
       
       toast.success('Child added successfully');
@@ -57,7 +60,7 @@ const AddChildModal: React.FC<AddChildModalProps> = ({ isOpen, onClose, onSucces
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <Input
-              label="Full Name"
+              label="Child's Full Name"
               error={errors.name?.message}
               {...register('name')}
             />
@@ -70,6 +73,25 @@ const AddChildModal: React.FC<AddChildModalProps> = ({ isOpen, onClose, onSucces
             />
 
             <Input
+              label="Parent's Name"
+              error={errors.parent_name?.message}
+              {...register('parent_name')}
+            />
+
+            <Input
+              label="Parent's Email"
+              type="email"
+              error={errors.parent_email?.message}
+              {...register('parent_email')}
+            />
+
+            <Input
+              label="Phone Number (optional)"
+              type="tel"
+              {...register('phone')}
+            />
+
+            <Input
               label="Allergies (optional)"
               helper="List any allergies or food restrictions"
               {...register('allergies')}
@@ -78,7 +100,7 @@ const AddChildModal: React.FC<AddChildModalProps> = ({ isOpen, onClose, onSucces
             <Input
               label="Special Needs (optional)"
               helper="Any special requirements or notes"
-              {...register('specialNeeds')}
+              {...register('special_needs')}
             />
 
             <div className="flex justify-end gap-3 pt-4">
