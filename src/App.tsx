@@ -9,6 +9,7 @@ import ProtectedRoute from './components/auth/protected-route';
 
 // Auth Pages
 import LoginPage from './pages/auth/login';
+import RegisterPage from './pages/auth/register';
 
 // App Pages
 import DashboardPage from './pages/dashboard';
@@ -44,7 +45,7 @@ const App: React.FC = () => {
         <Route path="/" element={<AuthLayout />}>
           <Route index element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} />
           <Route path="login" element={<LoginPage />} />
-          <Route path="register" element={<div>Register Page</div>} />
+          <Route path="register" element={<RegisterPage />} />
           <Route path="forgot-password" element={<div>Forgot Password Page</div>} />
         </Route>
         
